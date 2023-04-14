@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/stuneak/simplebank/api"
-	db "github.com/stuneak/simplebank/db/sqlc"
+	"github.com/stuneak/simplebank/internal"
 	"github.com/stuneak/simplebank/util"
 
 	_ "github.com/lib/pq"
@@ -23,7 +23,7 @@ func main() {
 		log.Fatal("cannot connect to the db", err)
 	}
 
-	store := db.NewStore(conn)
+	store := internal.NewStore(conn)
 	server := api.NewServer(store)
 
 	err = server.Start(config.ServerAddress)

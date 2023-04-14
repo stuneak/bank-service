@@ -1,30 +1,32 @@
-package db
+package internal
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	sqlc "github.com/stuneak/simplebank/db/sqlc"
 )
 
 type Store struct {
-	*Queries
+	*sqlc.Queries
 	db *sql.DB
 }
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{
 		db:      db,
-		Queries: New(db),
+		Queries: sqlc.New(db),
 	}
 }
 
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *Store) execTx(ctx context.Context, fn func(*sqlc.Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
-	q := New(tx)
+	q := sqlc.New(tx)
 	err = fn(q)
 	if err != nil {
 		if rbErr := tx.Rollback(); rbErr != nil {
@@ -44,21 +46,21 @@ type TransferTxParams struct {
 
 // TransferTxResult is the result of the transfer transaction
 type TransferTxResult struct {
-	Transfer    Transfer `json:"transfer"`
-	FromAccount Account  `json:"from_account"`
-	ToAccount   Account  `json:"to_account"`
-	FromEntry   Entry    `json:"from_entry"`
-	ToEntry     Entry    `json:"to_entry"`
+	Transfer    sqlc.Transfer `json:"transfer"`
+	FromAccount sqlc.Account  `json:"from_account"`
+	ToAccount   sqlc.Account  `json:"to_account"`
+	FromEntry   sqlc.Entry    `json:"from_entry"`
+	ToEntry     sqlc.Entry    `json:"to_entry"`
 }
 
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
-	err := store.execTx(ctx, func(q *Queries) error {
+	err := store.execTx(ctx, func(q *sqlc.Queries) error {
 
 		var err error
 
-		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
+		result.Transfer, err = q.CreateTransfer(ctx, sqlc.CreateTransferParams{
 			FromAccountID: arg.FromAccountID,
 			ToAccountID:   arg.ToAccountID,
 			Amount:        arg.Amount,
@@ -67,7 +69,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+		result.FromEntry, err = q.CreateEntry(ctx, sqlc.CreateEntryParams{
 			AccountID: arg.FromAccountID,
 			Amount:    -arg.Amount,
 		})
@@ -75,7 +77,7 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			return err
 		}
 
-		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+		result.ToEntry, err = q.CreateEntry(ctx, sqlc.CreateEntryParams{
 			AccountID: arg.ToAccountID,
 			Amount:    arg.Amount,
 		})
@@ -103,8 +105,8 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 	return result, err
 }
 
-func addMoney(ctx context.Context, q *Queries, accountID1 int64, amount1 int64, accountID2 int64, amount2 int64) (account1 Account, account2 Account, err error) {
-	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+func addMoney(ctx context.Context, q *sqlc.Queries, accountID1 int64, amount1 int64, accountID2 int64, amount2 int64) (account1 sqlc.Account, account2 sqlc.Account, err error) {
+	account1, err = q.AddAccountBalance(ctx, sqlc.AddAccountBalanceParams{
 		ID:     accountID1,
 		Amount: amount1,
 	})
@@ -113,7 +115,7 @@ func addMoney(ctx context.Context, q *Queries, accountID1 int64, amount1 int64, 
 		return
 	}
 
-	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+	account2, err = q.AddAccountBalance(ctx, sqlc.AddAccountBalanceParams{
 		ID:     accountID2,
 		Amount: amount2,
 	})

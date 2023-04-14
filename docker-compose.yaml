@@ -1,28 +1,40 @@
-version: "3.9"
+networks:
+  local_network:
+    name: local_network
+
+volumes:
+  go_postgres_data:
 services:
   postgres:
+    networks:
+      - local_network
     ports:
-      - "5432:5432"
+      - "5432:5432/tcp"
+    volumes:
+       - ${go_postgres_data:-go_postgres_data}:/var/lib/postgresql/data
     image: postgres:14-alpine
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=simple_bank
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8088:8088"
-    environment:
-      - DB_SOURCE=postgresql://root:secret@postgres:5432/simple_bank?sslmode=disable
-    depends_on:
-      - postgres
-    entrypoint:
-      [
-        "/app/wait-for.sh",
-        "postgres:5432",
-        "--",
-        "/app/start.sh"
-      ]
-    command: [ "/app/main" ]
+
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8088:8088"
+  #   environment:
+  #     - DB_SOURCE=${DB_SOURCE}
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - local_network
+  #   entrypoint:
+  #     [
+  #       "/app/wait-for.sh",
+  #       "postgres:5432",
+  #       "--",
+  #       "/app/start.sh"
+  #     ]
+  #   command: [ "/app/main" ]

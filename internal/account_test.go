@@ -1,4 +1,4 @@
-package db
+package internal
 
 import (
 	"context"
@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	sqlc "github.com/stuneak/simplebank/db/sqlc"
 	"github.com/stuneak/simplebank/util"
 )
 
-func createRandomAccount(t *testing.T) Account {
-	arg := CreateAccountParams{
+func createRandomAccount(t *testing.T) sqlc.Account {
+	arg := sqlc.CreateAccountParams{
 		Owner:    util.RandomOwner(),
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
@@ -51,7 +52,7 @@ func TestGetAccount(t *testing.T) {
 
 func TestUpdateAccount(t *testing.T) {
 	acc1 := createRandomAccount(t)
-	arg := UpdateAccountParams{
+	arg := sqlc.UpdateAccountParams{
 		ID:      acc1.ID,
 		Balance: util.RandomMoney(),
 	}
@@ -75,6 +76,8 @@ func TestDeleteAccount(t *testing.T) {
 
 	acc2, err := testQueries.GetAccount(context.Background(), acc1.ID)
 
+	// fmt.Print(acc2)
+
 	require.Error(t, err)
 	require.EqualError(t, err, sql.ErrNoRows.Error())
 	require.Empty(t, acc2)
@@ -85,7 +88,7 @@ func TestListAccounts(t *testing.T) {
 		createRandomAccount(t)
 	}
 
-	arg := ListAccountsParams{
+	arg := sqlc.ListAccountsParams{
 		Limit:  5,
 		Offset: 5,
 	}
