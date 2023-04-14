@@ -1,4 +1,4 @@
-package internal
+package sqlc_internal
 
 import (
 	"database/sql"
