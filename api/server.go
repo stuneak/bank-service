@@ -22,7 +22,6 @@ func NewServer(store sqlc_internal.Store) *Server {
 		v.RegisterValidation("currency", validCurrency)
 	}
 
-	fmt.Println("----- test")
 	router.POST("/accounts", server.createAccount)
 	router.GET("/accounts/:id", server.getAccount)
 	router.GET("/accounts", server.listAccounts)
@@ -36,6 +35,8 @@ func (server *Server) Start(address string) error {
 	return server.router.Run(address)
 }
 
-func errorResponse(err error) gin.H {
-	return gin.H{"Error": err.Error()}
+func errorResponse(err error) error {
+	error := fmt.Errorf("Error [%s]", err.Error())
+
+	return error
 }
