@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	internal "github.com/stuneak/simplebank/sqlc_internal"
+	"github.com/stuneak/simplebank/db/sqlc_custom"
 )
 
 type transferRequest struct {
@@ -34,7 +34,7 @@ func (server *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	arg := internal.TransferTxParams{
+	arg := sqlc_custom.TransferTxParams{
 		FromAccountID: req.FromAccountID,
 		ToAccountID:   req.ToAccountID,
 		Amount:        req.Amount,

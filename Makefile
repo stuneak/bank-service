@@ -22,6 +22,6 @@ server:
 	go run main.go
 
 mock: 
-	mockgen -destination db/mock/store.go  -package mock_db github.com/stuneak/simplebank/sqlc_internal Store
+	mockgen -destination db/mock/store.go  -package mockdb github.com/stuneak/simplebank/db/sqlc_custom Store
 
 .PHONY: createdb dropdb migrateup migratedown new_migration sqlc test server mock

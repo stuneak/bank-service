@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	"github.com/stuneak/simplebank/sqlc_internal"
+	"github.com/stuneak/simplebank/db/sqlc_custom"
 )
 
 type Server struct {
-	store  sqlc_internal.Store
+	store  sqlc_custom.Store
 	router *gin.Engine
 }
 
-func NewServer(store sqlc_internal.Store) *Server {
+func NewServer(store sqlc_custom.Store) *Server {
 	server := &Server{store: store}
 	router := gin.Default()
 

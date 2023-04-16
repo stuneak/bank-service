@@ -12,8 +12,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	mock_db "github.com/stuneak/simplebank/db/mock"
-	db "github.com/stuneak/simplebank/db/sqlc"
+	mockdb "github.com/stuneak/simplebank/db/mock"
+	sqlc "github.com/stuneak/simplebank/db/sqlc"
 	"github.com/stuneak/simplebank/util"
 )
 
@@ -23,13 +23,13 @@ func TestGetAccountSpi(t *testing.T) {
 	testCases := []struct {
 		name          string
 		accountID     int64
-		buildStubs    func(store *mock_db.MockStore)
+		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recoder *httptest.ResponseRecorder)
 	}{
 		{
 			name:      "OK",
 			accountID: account.ID,
-			buildStubs: func(store *mock_db.MockStore) {
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
@@ -45,11 +45,11 @@ func TestGetAccountSpi(t *testing.T) {
 			name:      "NotFound",
 			accountID: account.ID,
 
-			buildStubs: func(store *mock_db.MockStore) {
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
-					Return(db.Account{}, sql.ErrNoRows)
+					Return(sqlc.Account{}, sql.ErrNoRows)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -59,11 +59,11 @@ func TestGetAccountSpi(t *testing.T) {
 			name:      "InternalError",
 			accountID: account.ID,
 
-			buildStubs: func(store *mock_db.MockStore) {
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Eq(account.ID)).
 					Times(1).
-					Return(db.Account{}, sql.ErrConnDone)
+					Return(sqlc.Account{}, sql.ErrConnDone)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -72,7 +72,7 @@ func TestGetAccountSpi(t *testing.T) {
 		{
 			name:      "InvalidID",
 			accountID: 0,
-			buildStubs: func(store *mock_db.MockStore) {
+			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					GetAccount(gomock.Any(), gomock.Any()).
 					Times(0)
@@ -90,7 +90,7 @@ func TestGetAccountSpi(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			store := mock_db.NewMockStore(ctrl)
+			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
 			server := NewServer(store)
@@ -107,8 +107,8 @@ func TestGetAccountSpi(t *testing.T) {
 
 }
 
-func randomAccount() db.Account {
-	return db.Account{
+func randomAccount() sqlc.Account {
+	return sqlc.Account{
 		ID:       util.RandomInt(1, 1000),
 		Owner:    util.RandomOwner(),
 		Balance:  util.RandomMoney(),
@@ -116,11 +116,11 @@ func randomAccount() db.Account {
 	}
 }
 
-func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account db.Account) {
+func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account sqlc.Account) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotAccount db.Account
+	var gotAccount sqlc.Account
 	err = json.Unmarshal(data, &gotAccount)
 	require.NoError(t, err)
 	require.Equal(t, account, gotAccount)

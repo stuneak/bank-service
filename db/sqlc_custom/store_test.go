@@ -1,4 +1,4 @@
-package sqlc_internal
+package sqlc_custom
 
 import (
 	"context"
