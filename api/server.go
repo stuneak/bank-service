@@ -27,6 +27,8 @@ func NewServer(store sqlc_custom.Store) *Server {
 	router.GET("/accounts", server.listAccounts)
 	router.POST("/transfer", server.createTransfer)
 
+	router.POST("/users", server.createUser)
+
 	server.router = router
 	return server
 }
