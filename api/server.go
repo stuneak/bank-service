@@ -7,38 +7,56 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 	"github.com/stuneak/simplebank/db/sqlc_custom"
+	"github.com/stuneak/simplebank/token"
+	"github.com/stuneak/simplebank/util"
 )
 
 type Server struct {
-	store  sqlc_custom.Store
-	router *gin.Engine
+	config     util.Config
+	store      sqlc_custom.Store
+	router     *gin.Engine
+	tokenMaker token.Maker
 }
 
-func NewServer(store sqlc_custom.Store) *Server {
-	server := &Server{store: store}
-	router := gin.Default()
+func NewServer(config util.Config, store sqlc_custom.Store) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot create a token %w", err)
+	}
+
+	server := &Server{
+		store:      store,
+		tokenMaker: tokenMaker,
+		config:     config,
+	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("currency", validCurrency)
 	}
 
+	server.setupRouter()
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
+	router := gin.Default()
+
+	router.POST("/users", server.createUser)
+	router.POST("/users/login", server.loginUser)
+
 	router.POST("/accounts", server.createAccount)
 	router.GET("/accounts/:id", server.getAccount)
 	router.GET("/accounts", server.listAccounts)
 	router.POST("/transfer", server.createTransfer)
-
-	router.POST("/users", server.createUser)
-
 	server.router = router
-	return server
 }
 
 func (server *Server) Start(address string) error {
 	return server.router.Run(address)
 }
 
-func errorResponse(err error) error {
-	error := fmt.Errorf("Error [%s]", err.Error())
+func errorResponse(err error) gin.H {
 
-	return error
+	return gin.H{"error": err.Error()}
 }
